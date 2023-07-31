@@ -1,5 +1,5 @@
 [package]
-name = "rust_authentication"
+name = "rust_jwt_authentication"
 version = "0.1.0"
 edition = "2021"
 
