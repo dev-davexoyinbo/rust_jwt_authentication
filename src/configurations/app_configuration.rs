@@ -41,3 +41,16 @@ pub struct DatabaseConfiguration {
     postgres_password: String,
     postgres_db: String,
 }
+
+impl DatabaseConfiguration {
+    pub fn get_connection_string(&self) -> String {
+        return format!(
+            "postgresql://{},{}@{}:{}/{}",
+            self.postgres_user,
+            self.postgres_password,
+            self.postgres_host,
+            self.postgres_port,
+            self.postgres_db
+        );
+    }
+}
