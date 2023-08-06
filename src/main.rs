@@ -1,7 +1,6 @@
-use actix_web::{web, App, HttpResponse, HttpServer, middleware::Logger};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
-use log::{info, error};
-
+use rust_jwt_authentication::handlers::healthcheck::healthcheck;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -9,12 +8,8 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-        .wrap(Logger::default())
-        .route(
-            "/",
-            web::get().to(|| async {
-                HttpResponse::Ok().body("This is the response") }),
-        )
+            .wrap(Logger::default())
+            .route("/health-check", web::get().to(healthcheck))
     })
     .bind(("0.0.0.0", 8080))?
     .run()
