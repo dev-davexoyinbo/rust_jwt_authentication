@@ -11,11 +11,12 @@ services:
       - progresDB:/var/lib/postgresql/data
     env_file:
       - ./.env
-  
-  # rust_jwt_authentication:
-  #   build: .
-  #   ports:
-  #     - "8080:8080"
+    environment:
+      - POSTGRES_HOST=${postgres_host}
+      - POSTGRES_PORT=${postgres_port}
+      - POSTGRES_USER=${postgres_user}
+      - POSTGRES_PASSWORD=${postgres_password}
+      - POSTGRES_DB=${postgres_db}
 
 volumes:
   progresDB:

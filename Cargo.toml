@@ -10,6 +10,7 @@ actix-web = "4.3.1"
 argon2 = "0.5.1"
 config = "0.13.3"
 env_logger = "0.10.0"
+handlebars = "4.3.7"
 log = "0.4.19"
 serde = { version = "1.0.177", features = ["derive"] }
 sqlx = { version = "0.7.1", features = ["runtime-async-std-native-tls", "postgres", "chrono", "uuid"] }

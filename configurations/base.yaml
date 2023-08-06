@@ -1,0 +1,6 @@
+database_configuration:
+  postgres_host: {{postgres_host}}
+  postgres_port: {{postgres_port}}
+  postgres_user: admin
+  postgres_password: password123
+  postgres_db: rust_jwt_authentication
