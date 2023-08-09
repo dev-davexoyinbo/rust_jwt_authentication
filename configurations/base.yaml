@@ -4,3 +4,8 @@ database_configuration:
   postgres_user: {{POSTGRES_USER}}
   postgres_password: {{POSTGRES_PASSWORD}}
   postgres_db: {{POSTGRES_DB}}
+
+jwt_config:
+  secret: {{ JWT_SECRET }}
+  expires_in: {{ JWT_EXPIRED_IN }}
+  maxage: {{ JWT_MAXAGE }}

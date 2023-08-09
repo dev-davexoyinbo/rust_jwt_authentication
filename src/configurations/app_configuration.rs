@@ -4,7 +4,8 @@ use config::{Config, ConfigError, File, FileFormat};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct AppConfiguration {
-    database_configuration: DatabaseConfiguration,
+    pub database_configuration: DatabaseConfiguration,
+    pub jwt_config: JwtConfig,
 }
 
 impl AppConfiguration {
@@ -33,6 +34,7 @@ impl AppConfiguration {
     }
 }
 
+// Database configuration struct
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct DatabaseConfiguration {
     postgres_host: String,
@@ -53,4 +55,13 @@ impl DatabaseConfiguration {
             self.postgres_db
         );
     }
+}
+
+
+// Jwt config struct
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct JwtConfig {
+    secret: String,
+    expires_in: String,
+    maxage: u32,
 }
