@@ -1,7 +1,7 @@
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use rust_jwt_authentication::{
-    configurations::app_configuration::AppConfiguration, handlers::healthcheck::healthcheck,
+    auth, configurations::app_configuration::AppConfiguration, handlers::healthcheck::healthcheck,
     middlewares::auth_middleware::AuthMiddlewareInitializer,
 };
 use sqlx::postgres::PgPoolOptions;
@@ -31,6 +31,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(db_pool.clone())
             .wrap(AuthMiddlewareInitializer)
             .wrap(Logger::default())
+            .configure(auth::handlers::auth_config)
             .route("/health-check", web::get().to(healthcheck))
     })
     .bind(("0.0.0.0", 8080))?

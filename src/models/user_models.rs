@@ -1,19 +1,22 @@
-use sqlx::types::chrono::{Utc, DateTime};
+use chrono::{DateTime, Utc};
 
+
+#[derive(Debug)]
 pub struct User {
     pub id: u32,
     pub name: String,
     pub email: String,
-    password: String,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>
+    pub password: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>
 }
 
+#[derive(Debug)]
 pub struct FilteredUser {
-    id: u32,
-    name: String,
-    email: String,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>
+    pub id: u32,
+    pub name: String,
+    pub email: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>
 }
 

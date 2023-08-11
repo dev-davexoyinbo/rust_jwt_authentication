@@ -4,11 +4,10 @@ use actix_web::{
     Error, HttpMessage, ResponseError,
 };
 use futures_util::future::{ready, LocalBoxFuture, Ready};
-use jsonwebtoken::{decode, DecodingKey, Validation};
 use sqlx::PgPool;
 use tokio::runtime::Runtime;
 
-use crate::{auth::models::{AuthenticationInfo, JsonTokenClaims, JwtUtils}, configurations::app_configuration::AppConfiguration};
+use crate::auth::{models::AuthenticationInfo, utils::JwtUtils};
 pub struct AuthMiddlewareInitializer;
 
 // Middleware factory is `Transform` trait
