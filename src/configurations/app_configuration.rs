@@ -47,7 +47,7 @@ pub struct DatabaseConfiguration {
 impl DatabaseConfiguration {
     pub fn get_connection_string(&self) -> String {
         return format!(
-            "postgresql://{},{}@{}:{}/{}",
+            "postgresql://{}:{}@{}:{}/{}",
             self.postgres_user,
             self.postgres_password,
             self.postgres_host,
@@ -61,7 +61,7 @@ impl DatabaseConfiguration {
 // Jwt config struct
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct JwtConfig {
-    secret: String,
-    expires_in: String,
-    maxage: u32,
+    pub secret: String,
+    pub expires_in: String,
+    pub maxage: u32,
 }

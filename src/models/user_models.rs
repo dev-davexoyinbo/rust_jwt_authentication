@@ -1,9 +1,9 @@
 use sqlx::types::chrono::{Utc, DateTime};
 
 pub struct User {
-    id: u32,
-    name: String,
-    email: String,
+    pub id: u32,
+    pub name: String,
+    pub email: String,
     password: String,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>

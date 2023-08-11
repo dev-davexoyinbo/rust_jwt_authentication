@@ -13,9 +13,11 @@ derive_more = "0.99.17"
 env_logger = "0.10.0"
 futures-util = "0.3.28"
 handlebars = "4.3.7"
+jsonwebtoken = "8.3.0"
 log = "0.4.19"
 serde = { version = "1.0.177", features = ["derive"] }
 sqlx = { version = "0.7.1", features = ["runtime-async-std-native-tls", "postgres", "chrono", "uuid"] }
+tokio = { version = "1.30.0", features = ["full"] }
 
 [lib]
 name = "rust_jwt_authentication"

@@ -1,9 +1,14 @@
 use actix_web::{
-    body::{BoxBody, EitherBody},
+    body::EitherBody,
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpResponse, ResponseError,
+    Error, HttpMessage, ResponseError,
 };
-use futures_util::future::{ready, Lazy, LocalBoxFuture, Ready};
+use futures_util::future::{ready, LocalBoxFuture, Ready};
+use jsonwebtoken::{decode, DecodingKey, Validation};
+use sqlx::PgPool;
+use tokio::runtime::Runtime;
+
+use crate::{auth::models::{AuthenticationInfo, JsonTokenClaims, JwtUtils}, configurations::app_configuration::AppConfiguration};
 pub struct AuthMiddlewareInitializer;
 
 // Middleware factory is `Transform` trait
@@ -43,28 +48,48 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        log::error!("Hi from start. You requested: {}", req.path());
+        let http_request = req.request();
 
-        let is_authenticated = true;
+        // Get token from the authorization header
+        let token = http_request
+            .headers()
+            .get("Authorization")
+            .map(|h| h.to_str().unwrap().split_at(7).1.to_string());
 
-        if !is_authenticated {
-            let response = req.into_response(
-                HttpResponse::Unauthorized()
-                    .body("This")
-                    .map_into_boxed_body(),
-            );
-            
-            Box::pin(async { Ok(response.map_into_right_body()) })
-        } else {
-            let fut: <S as Service<ServiceRequest>>::Future = self.service.call(req);
+        if let Some(token) = token {
+            // Decode token
+            if let Ok(token_data) = JwtUtils::decode(&token) {
+                let claims = token_data.claims;
+                let email = claims.sub;
 
-            Box::pin(async move {
-                let res = fut.await?;
+                let db_pool = req.app_data::<PgPool>().expect("Unable to find db pool");
 
-                // log::error!("Hi from response");
-                Ok(res.map_into_left_body())
-            })
-        }
+                let rt = Runtime::new().unwrap();
+                rt.block_on(async {
+                    let record =
+                        sqlx::query!("SELECT id, email, name FROM users WHERE email = $1", email)
+                            .fetch_one(db_pool)
+                            .await;
+
+                    if let Ok(record) = record {
+                        http_request.extensions_mut().insert::<AuthenticationInfo>(
+                            AuthenticationInfo {
+                                id: record.id as u32,
+                                email: record.email,
+                                name: record.name,
+                            },
+                        );
+                    };
+                });
+            };
+        };
+
+        let fut: <S as Service<ServiceRequest>>::Future = self.service.call(req);
+
+        Box::pin(async move {
+            let res = fut.await?;
+            Ok(res.map_into_left_body())
+        })
     }
 }
 
@@ -76,3 +101,21 @@ struct AuthenticationError {
 
 // Use default implementation for `error_response()` method
 impl ResponseError for AuthenticationError {}
+
+// let is_authenticated = false;
+// if !is_authenticated {
+//     let response = req.into_response(
+//         HttpResponse::Unauthorized()
+//             .json(ResponseDTO::new("Unauthenticated").message("Unauthenticated"))
+//             .map_into_boxed_body(),
+//     );
+
+//     Box::pin(async { Ok(response.map_into_right_body()) })
+// } else {
+//     let fut: <S as Service<ServiceRequest>>::Future = self.service.call(req);
+
+//     Box::pin(async move {
+//         let res = fut.await?;
+//         Ok(res.map_into_left_body())
+//     })
+// }
