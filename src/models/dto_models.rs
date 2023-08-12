@@ -11,7 +11,7 @@ impl<T> ResponseDTO<T> {
     pub fn new(data: T) -> Self {
         return ResponseDTO {
             data,
-            message: String::from("Success"),
+            message: String::from(""),
         };
     }
 

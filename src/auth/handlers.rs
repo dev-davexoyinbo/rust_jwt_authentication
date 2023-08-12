@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::models::JsonTokenClaims;
 use crate::auth::repositories::Repository;
 use crate::models::dto_models::ResponseDTO;
@@ -5,11 +7,10 @@ use crate::{auth::utils::JwtUtils, models::user_models::User};
 use actix_web::{post, web, HttpResponse, Responder};
 use chrono::{Duration, Utc};
 use log::info;
-use sqlx::postgres::PgRow;
-use sqlx::{PgPool, Postgres};
+use sqlx::PgPool;
 
 pub fn auth_config(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("api/auth").service(login));
+    cfg.service(web::scope("api/auth").service(login).service(register));
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -23,24 +24,27 @@ struct LoginResponseDTO {
     pub token: String,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct RegisterDTO {
+    pub email: String,
+    pub password: String,
+    pub name: String,
+}
+
 #[post("login")]
 pub async fn login(data: web::Json<LoginDTO>, db_pool: web::Data<PgPool>) -> impl Responder {
     let now = Utc::now();
     let LoginDTO { email, password } = data.into_inner();
 
-    let user = sqlx::query("SELECT * from users WHERE email = $1")
-        .bind(&email)
-        .map(|row: PgRow| Repository::<User>::from_row(&row).unwrap())
-        .fetch_one(&(**db_pool))
-        .await;
-
+    let user = Repository::<User>::get_by_email(&(**db_pool), &email).await;
 
     match user {
-        Err(_) => HttpResponse::Unauthorized()
+        None => HttpResponse::Unauthorized()
             .json(ResponseDTO::new("User does not exist").message("User does not exist")),
-        Ok(user) => {
+        Some(user) => {
             if user.password != password {
-                return HttpResponse::Unauthorized().json(ResponseDTO::new("Unauthorized").message("Invalid email or password"))
+                return HttpResponse::Unauthorized()
+                    .json(ResponseDTO::new("Unauthorized").message("Invalid email or password"));
             }
 
             info!("User ({}) loggedin successfully", &user.email);
@@ -64,3 +68,33 @@ pub async fn login(data: web::Json<LoginDTO>, db_pool: web::Data<PgPool>) -> imp
         }
     }
 } //end function login
+
+#[post("register")]
+pub async fn register(data: web::Json<RegisterDTO>, db_pool: web::Data<PgPool>) -> impl Responder {
+    let RegisterDTO {
+        email,
+        password,
+        name,
+    } = data.into_inner();
+
+    if Repository::<User>::exist_by_email(&db_pool, &email).await {
+        return HttpResponse::NotFound()
+            .json(ResponseDTO::new("Not Found").message("The email already exist"));
+    }
+
+    let user = Repository::<User>::create_one(
+        &(**db_pool),
+        &email.as_str(),
+        &password.as_str(),
+        &name.as_str(),
+    )
+    .await;
+
+    match user {
+        Err(e) => HttpResponse::BadRequest().json(ResponseDTO::new(e.to_string())),
+        Ok(None) => HttpResponse::BadRequest().json(ResponseDTO::new("Unable to create User")),
+        Ok(Some(user)) => HttpResponse::Created().json(
+            ResponseDTO::new(HashMap::from([("id", user.id)])).message("User created successfully"),
+        ),
+    }
+}
