@@ -1,8 +1,7 @@
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use rust_jwt_authentication::{
-    auth, configurations::app_configuration::AppConfiguration, handlers::healthcheck::healthcheck,
-    middlewares::auth_middleware::AuthMiddlewareInitializer,
+    auth::{self, middleware::AuthMiddlewareInitializer}, configurations::app_configuration::AppConfiguration, handlers::healthcheck::healthcheck,
 };
 use sqlx::postgres::PgPoolOptions;
 

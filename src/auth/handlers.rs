@@ -10,27 +10,10 @@ use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{Duration, Utc};
 use sqlx::PgPool;
+use crate::auth::dto::*;
 
 pub fn auth_config(cfg: &mut web::ServiceConfig) {
     cfg.service(web::scope("api/auth").service(login).service(register));
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct LoginDTO {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-struct LoginResponseDTO {
-    pub token: String,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct RegisterDTO {
-    pub email: String,
-    pub password: String,
-    pub name: String,
 }
 
 #[post("login")]
