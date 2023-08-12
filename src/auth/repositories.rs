@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use chrono::{DateTime, Utc};
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use crate::models::user_models::{FilteredUser, User};
+use crate::models::user_models::User;
 
 pub struct Repository<T> {
     data: PhantomData<T>,

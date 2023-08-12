@@ -5,8 +5,10 @@ use crate::auth::repositories::Repository;
 use crate::models::dto_models::ResponseDTO;
 use crate::{auth::utils::JwtUtils, models::user_models::User};
 use actix_web::{post, web, HttpResponse, Responder};
+use argon2::password_hash::rand_core::OsRng;
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{Duration, Utc};
-use log::info;
 use sqlx::PgPool;
 
 pub fn auth_config(cfg: &mut web::ServiceConfig) {
@@ -42,12 +44,21 @@ pub async fn login(data: web::Json<LoginDTO>, db_pool: web::Data<PgPool>) -> imp
         None => HttpResponse::Unauthorized()
             .json(ResponseDTO::new("User does not exist").message("User does not exist")),
         Some(user) => {
-            if user.password != password {
+            let parsed_hash = PasswordHash::new(&user.password);
+
+            if let Err(_) = parsed_hash {
+                return HttpResponse::Unauthorized()
+                    .json(ResponseDTO::new("Unauthorized").message("Unable to parse password"));
+            }
+
+            let password_correct = Argon2::default()
+                .verify_password(password.as_bytes(), &(parsed_hash.unwrap()))
+                .is_ok();
+
+            if !password_correct {
                 return HttpResponse::Unauthorized()
                     .json(ResponseDTO::new("Unauthorized").message("Invalid email or password"));
             }
-
-            info!("User ({}) loggedin successfully", &user.email);
 
             let claims = JsonTokenClaims {
                 sub: user.email,
@@ -76,6 +87,12 @@ pub async fn register(data: web::Json<RegisterDTO>, db_pool: web::Data<PgPool>) 
         password,
         name,
     } = data.into_inner();
+
+    let salt = SaltString::generate(&mut OsRng);
+    let password = Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
 
     if Repository::<User>::exist_by_email(&db_pool, &email).await {
         return HttpResponse::NotFound()

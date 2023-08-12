@@ -17,8 +17,6 @@ async fn main() -> std::io::Result<()> {
         .database_configuration
         .get_connection_string();
 
-    println!("Database Connection string: {:?}", &db_connection_string);
-
     let pool = PgPoolOptions::new()
         .connect(&db_connection_string)
         .await
