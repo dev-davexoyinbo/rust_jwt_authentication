@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use super::models::JsonTokenClaims;
 use crate::auth::repositories::Repository;
 use crate::models::dto_models::ResponseDTO;
+use crate::states::db_state::DBState;
 use crate::{auth::utils::JwtUtils, models::user_models::User};
 use actix_web::{post, web, HttpResponse, Responder};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{Duration, Utc};
-use sqlx::PgPool;
 use crate::auth::dto::*;
 
 pub fn auth_config(cfg: &mut web::ServiceConfig) {
@@ -17,11 +17,11 @@ pub fn auth_config(cfg: &mut web::ServiceConfig) {
 }
 
 #[post("login")]
-pub async fn login(data: web::Json<LoginDTO>, db_pool: web::Data<PgPool>) -> impl Responder {
+pub async fn login(data: web::Json<LoginDTO>, db_state: web::Data<DBState>) -> impl Responder {
     let now = Utc::now();
     let LoginDTO { email, password } = data.into_inner();
 
-    let user = Repository::<User>::get_by_email(&(**db_pool), &email).await;
+    let user = Repository::<User>::get_by_email(&db_state.pool, &email).await;
 
     match user {
         None => HttpResponse::Unauthorized()
@@ -64,7 +64,7 @@ pub async fn login(data: web::Json<LoginDTO>, db_pool: web::Data<PgPool>) -> imp
 } //end function login
 
 #[post("register")]
-pub async fn register(data: web::Json<RegisterDTO>, db_pool: web::Data<PgPool>) -> impl Responder {
+pub async fn register(data: web::Json<RegisterDTO>, db_state: web::Data<DBState>) -> impl Responder {
     let RegisterDTO {
         email,
         password,
@@ -77,13 +77,13 @@ pub async fn register(data: web::Json<RegisterDTO>, db_pool: web::Data<PgPool>) 
         .unwrap()
         .to_string();
 
-    if Repository::<User>::exist_by_email(&db_pool, &email).await {
+    if Repository::<User>::exist_by_email(&db_state.pool, &email).await {
         return HttpResponse::NotFound()
             .json(ResponseDTO::new("Not Found").message("The email already exist"));
     }
 
     let user = Repository::<User>::create_one(
-        &(**db_pool),
+        &db_state.pool,
         &email.as_str(),
         &password.as_str(),
         &name.as_str(),
