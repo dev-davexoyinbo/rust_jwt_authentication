@@ -1,19 +1,31 @@
 use std::collections::HashMap;
 
+use super::extractors::Authenticated;
+use super::middlewares::require_auth_middleware::RequireAuthMiddlewareInitializer;
 use super::models::JsonTokenClaims;
+use crate::auth::dto::*;
 use crate::auth::repositories::Repository;
 use crate::models::dto_models::ResponseDTO;
+use crate::models::user_models::FilteredUser;
 use crate::states::db_state::DBState;
 use crate::{auth::utils::JwtUtils, models::user_models::User};
-use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{Duration, Utc};
-use crate::auth::dto::*;
 
 pub fn auth_config(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("api/auth").service(login).service(register));
+    cfg.service(
+        web::scope("api/auth")
+            .service(login)
+            .service(register)
+            .service(
+                web::scope("")
+                    .wrap(RequireAuthMiddlewareInitializer)
+                    .service(user_route),
+            ),
+    );
 }
 
 #[post("login")]
@@ -64,7 +76,10 @@ pub async fn login(data: web::Json<LoginDTO>, db_state: web::Data<DBState>) -> i
 } //end function login
 
 #[post("register")]
-pub async fn register(data: web::Json<RegisterDTO>, db_state: web::Data<DBState>) -> impl Responder {
+pub async fn register(
+    data: web::Json<RegisterDTO>,
+    db_state: web::Data<DBState>,
+) -> impl Responder {
     let RegisterDTO {
         email,
         password,
@@ -97,4 +112,23 @@ pub async fn register(data: web::Json<RegisterDTO>, db_state: web::Data<DBState>
             ResponseDTO::new(HashMap::from([("id", user.id)])).message("User created successfully"),
         ),
     }
-}
+} //end function register
+
+#[get("user")]
+pub async fn user_route(auth: Authenticated, db_state: web::Data<DBState>) -> impl Responder {
+    let user: Option<User> = Repository::<User>::get_by_email(&db_state.pool, &auth.email).await;
+
+    match user {
+        Some(user) => {
+            let filtered_user: Result<FilteredUser, _> = user.try_into();
+            match filtered_user {
+                Ok(filtered_user) => HttpResponse::Ok()
+                    .json(ResponseDTO::new(filtered_user).message("Authenticated user")),
+                Err(e) => HttpResponse::InternalServerError()
+                    .json(ResponseDTO::new(e.to_string()).message("Unable to build user response")),
+            }
+        }
+        None => HttpResponse::NotFound()
+            .json(ResponseDTO::new("Not found").message("User record not found")),
+    }
+} // end user function

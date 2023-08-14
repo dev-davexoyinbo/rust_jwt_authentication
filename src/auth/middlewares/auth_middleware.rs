@@ -68,14 +68,8 @@ where
                 .get(http::header::AUTHORIZATION)
                 .map(|h| {
                     let authorization_header = h.to_str().expect("Unable to convert to str");
-                    log::error!(
-                        "Authorization header({}): {}",
-                        authorization_header.len(),
-                        authorization_header
-                    );
                     if authorization_header.len() > 7 {
                         let (_, token) = authorization_header.split_at(7);
-                        log::error!("Authorization token: {}", token);
                         token.to_string()
                     } else {
                         "".to_string()
@@ -98,13 +92,11 @@ where
                             .await;
 
                     if let Ok(record) = record {
-                        log::error!("Record: {:?}", record);
                         let auth_info = AuthenticationInfo {
                             id: record.id as u32,
                             email: record.email,
                             name: record.name,
                         };
-                        log::error!("Auth info: {:?}", auth_info);
                         req.request()
                             .extensions_mut()
                             .insert::<AuthenticationInfo>(auth_info);
