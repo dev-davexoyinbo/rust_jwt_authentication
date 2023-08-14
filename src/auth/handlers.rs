@@ -51,8 +51,8 @@ pub async fn login(data: web::Json<LoginDTO>, db_state: web::Data<DBState>) -> i
                 .is_ok();
 
             if !password_correct {
-                return HttpResponse::Unauthorized()
-                    .json(ResponseDTO::new("Unauthorized").message("Invalid email or password"));
+                return HttpResponse::BadRequest()
+                    .json(ResponseDTO::new("Invalid email or password").message("Invalid email or password"));
             }
 
             let claims = JsonTokenClaims {
@@ -94,7 +94,7 @@ pub async fn register(
 
     if Repository::<User>::exist_by_email(&db_state.pool, &email).await {
         return HttpResponse::NotFound()
-            .json(ResponseDTO::new("Not Found").message("The email already exist"));
+            .json(ResponseDTO::new("Duplicate record").message("The email already exist"));
     }
 
     let user = Repository::<User>::create_one(
