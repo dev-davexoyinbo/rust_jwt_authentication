@@ -42,3 +42,35 @@ impl FromRequest for Authenticated {
         });
     }
 }
+
+pub struct MaybeAuthenticated {
+    value: Option<AuthenticationInfo>,
+}
+
+impl MaybeAuthenticated {
+    pub fn new(auth_info: Option<AuthenticationInfo>) -> Self {
+        MaybeAuthenticated { value: auth_info }
+    }
+}
+
+impl Deref for MaybeAuthenticated {
+    type Target = Option<AuthenticationInfo>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl FromRequest for MaybeAuthenticated {
+    type Error = actix_web::Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>> + Send>>;
+
+    fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
+        let auth_info = req.extensions().get::<AuthenticationInfo>().cloned();
+        
+        return Box::pin(async {
+            Ok(MaybeAuthenticated::new(auth_info))
+        });
+    }
+}
+
