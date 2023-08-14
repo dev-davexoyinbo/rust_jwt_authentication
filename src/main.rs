@@ -1,7 +1,10 @@
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use rust_jwt_authentication::{
-    auth::{self, middleware::{AuthMiddlewareInitializer, RequireAuthMiddlewareInitializer}}, configurations::app_configuration::AppConfiguration, handlers::{healthcheck::healthcheck, authenticated_route}, states::db_state::DBState,
+    auth::{self, middlewares::{auth_middleware::AuthMiddlewareInitializer, require_auth_middleware::RequireAuthMiddlewareInitializer}},
+    configurations::app_configuration::AppConfiguration,
+    handlers::{authenticated_route, healthcheck::healthcheck},
+    states::db_state::DBState,
 };
 use sqlx::postgres::PgPoolOptions;
 
@@ -21,9 +24,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Unable to connect to the postgres database");
 
-    let db_state = web::Data::new(DBState {
-        pool,
-    });
+    let db_state = web::Data::new(DBState { pool });
 
     HttpServer::new(move || {
         App::new()
@@ -32,7 +33,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .configure(auth::handlers::auth_config)
             .route("/health-check", web::get().to(healthcheck))
-            .service(web::scope("api").wrap(RequireAuthMiddlewareInitializer).route("authenticated-route", web::get().to(authenticated_route)))
+            .service(
+                web::scope("api")
+                    .wrap(RequireAuthMiddlewareInitializer)
+                    .route("authenticated-route", web::get().to(authenticated_route)),
+            )
     })
     .bind(("0.0.0.0", 8080))?
     .run()

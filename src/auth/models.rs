@@ -5,7 +5,7 @@ pub struct JsonTokenClaims {
     pub exp: u64,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct AuthenticationInfo {
     pub id: u32,
     pub email: String,
