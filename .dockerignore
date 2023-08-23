@@ -1,0 +1,8 @@
+# .env
+.git/
+.vscode/
+target/
+tests/
+Dockerfile
+scripts/
+migrations/

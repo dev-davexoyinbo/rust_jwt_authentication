@@ -4,6 +4,7 @@ use config::{Config, ConfigError, File, FileFormat};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct AppConfiguration {
+    pub app_config: AppConfig,
     pub database_configuration: DatabaseConfiguration,
     pub jwt_config: JwtConfig,
 }
@@ -64,4 +65,10 @@ pub struct JwtConfig {
     pub secret: String,
     pub expires_in: String,
     pub maxage: u32,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct AppConfig {
+    pub host: String,
+    pub port: u16,
 }

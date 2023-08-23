@@ -31,7 +31,8 @@ RUN apt-get update -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/rust_jwt_authentication rust_jwt_authentication
-# COPY configuration configuration
+COPY configurations configurations
+COPY .env .env
 ENV APP_ENVIRONMENT production
 
 ENTRYPOINT [ "./rust_jwt_authentication" ]

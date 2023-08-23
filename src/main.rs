@@ -1,7 +1,15 @@
+use std::time::Duration;
+
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use rust_jwt_authentication::{
-    auth::{self, middlewares::{auth_middleware::AuthMiddlewareInitializer, require_auth_middleware::RequireAuthMiddlewareInitializer}},
+    auth::{
+        self,
+        middlewares::{
+            auth_middleware::AuthMiddlewareInitializer,
+            require_auth_middleware::RequireAuthMiddlewareInitializer,
+        },
+    },
     configurations::app_configuration::AppConfiguration,
     handlers::{authenticated_route, healthcheck::healthcheck},
     states::db_state::DBState,
@@ -19,7 +27,11 @@ async fn main() -> std::io::Result<()> {
         .database_configuration
         .get_connection_string();
 
+    println!("DB connection: {}", db_connection_string);
+    println!("App configuration: {:?}", app_configurations);
+
     let pool = PgPoolOptions::new()
+        .acquire_timeout(Duration::from_secs(5))
         .connect(&db_connection_string)
         .await
         .expect("Unable to connect to the postgres database");
@@ -39,7 +51,7 @@ async fn main() -> std::io::Result<()> {
                     .route("authenticated-route", web::get().to(authenticated_route)),
             )
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind((app_configurations.app_config.host, app_configurations.app_config.port))?
     .run()
     .await
 }

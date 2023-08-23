@@ -1,3 +1,7 @@
+app_config:
+  port: {{#if PORT}}{{PORT}}{{else}}8080{{/if}}
+  host: {{#if HOST}}{{HOST}}{{else}}"0.0.0.0"{{/if}}
+
 database_configuration:
   postgres_host: {{POSTGRES_HOST}}
   postgres_port: {{POSTGRES_PORT}}
