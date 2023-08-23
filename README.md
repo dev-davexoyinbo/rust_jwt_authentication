@@ -49,6 +49,7 @@ cargo test
 ```
 
 ## Running the project
+`NOTE: If using this method you would need to update the .env file to match your environment's database`
 ```bash
 cargo run
 ```
